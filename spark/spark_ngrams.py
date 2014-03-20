@@ -32,6 +32,6 @@ def process_ngram_cheat(record):
         # generate key
         pair = tuple(sorted([ngram[0], ngram[-1]]))
         k = pair + (year,)
-        return [(k, count)]
+        return [('\t'.join(k), count)]
     except Exception:
         return []
