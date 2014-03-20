@@ -154,11 +154,16 @@ LOCATION '/user/laserson/rock-health-python/iris_text';
 Score the model on the ~150M points with PySpark
 
 ```python
-from models import predict_species
+from models import predict_species_spark
+sc.addPyFile(models.py)
 observations = sc.textFile('/user/laserson/rock-health-python/iris_text') \
         .map(lambda line: tuple([float(val) for val in line.split('\t')[1:]]))
-predictions = observations.map(lambda tup: predict_species(*tup))
+predictions = observations.flatMap(lambda tup: predict_species_spark(*tup))
+predictions = observations.map(lambda tup: predict_species_spark(*tup))
+# should work, but distinct is acting funny
 predictions.distinct().collect()
+predictions.map(lambda x: (x, 1)).reduceByKey(lambda x, y: x + y)
+
 ```
 
 Create a UDF from the Python model
@@ -167,7 +172,7 @@ Create a UDF from the Python model
 from impala.dbapi import connect
 from impala.udf import ship_udf
 from numba.ext.impala import udf, FunctionContext, DoubleVal, IntVal
-from models import predict_species
+from models import predict_species_impala
 
 # connect to impala
 host = 'bottou01-10g.pa.cloudera.com'
@@ -177,9 +182,9 @@ cursor = conn.cursor(user='laserson')
 cursor.execute('USE rock_health')
 
 # compile and ship
-predict_species = udf(IntVal(FunctionContext, DoubleVal, DoubleVal, DoubleVal))(predict_species)
+predict_species_impala = udf(IntVal(FunctionContext, DoubleVal, DoubleVal, DoubleVal))(predict_species_impala)
 ship_udf(cursor, predict_species, '/user/laserson/rock-health-python/iris.ll', host, user=user)
 
 # run the same query
-cursor.execute("SELECT DISTINCT predict_species(sepal_width, petal_length, petal_width) FROM iris_text")
+cursor.execute("SELECT DISTINCT predict_species_impala(sepal_width, petal_length, petal_width) FROM iris_text")
 ```
