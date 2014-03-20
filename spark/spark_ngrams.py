@@ -23,19 +23,15 @@ def process_ngram(record):
 
 
 def process_ngram_cheat(record):
-    data = record.split('\t')
-    
-    # error checking
-    if len(data) < 3:
+    try:
+        data = record.split('\t')
+        # unpack data
+        ngram = data[0].split()
+        year = data[1]
+        count = int(data[2])
+        # generate key
+        pair = tuple(sorted([ngram[0], ngram[-1]]))
+        k = pair + (year,)
+        return [(k, count)]
+    except Exception:
         return []
-    
-    # unpack data
-    ngram = data[0].split()
-    year = data[1]
-    count = int(data[2])
-    
-    # generate key
-    pair = tuple(sorted([ngram[0], ngram[-1]]))
-    k = pair + (year,)
-    
-    return [(k, count)]
