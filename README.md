@@ -102,10 +102,13 @@ Then interactively compute
 ```python
 # we are cheating a bit here bc the map function is simplified
 from spark_ngrams import process_ngram_cheat
+sc.addPyFile("spark_ngrams.py")
 
 ngrams = sc.textFile("hdfs:///user/laserson/rock-health-python/ngrams")
 
 neighbors = ngrams.flatMap(process_ngram_cheat).reduceByKey(lambda x, y: x + y)
+neighbors.count()
+
 
 ngrams.cache()
 ```
@@ -182,8 +185,11 @@ cursor = conn.cursor(user='laserson')
 cursor.execute('USE rock_health')
 
 # compile and ship
-predict_species_impala = udf(IntVal(FunctionContext, DoubleVal, DoubleVal, DoubleVal))(predict_species_impala)
-ship_udf(cursor, predict_species, '/user/laserson/rock-health-python/iris.ll', host, user=user)
+signature = IntVal(FunctionContext, DoubleVal, DoubleVal, DoubleVal)
+predict_species_impala = udf(signature)(predict_species_impala)
+ship_udf(cursor, predict_species_impala,
+         '/user/laserson/rock-health-python/iris.ll',
+         host, user=user, overwrite=True)
 
 # run the same query
 cursor.execute("SELECT DISTINCT predict_species_impala(sepal_width, petal_length, petal_width) FROM iris_text")

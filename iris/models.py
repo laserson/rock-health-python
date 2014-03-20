@@ -1,4 +1,4 @@
-def predict_species_impala(sepal_width, petal_length, petal_width):
+def predict_species_impala(context, sepal_width, petal_length, petal_width):
     """ Predictor for species from model/52952081035d07727e01d836
         Predictive model by BigML - Machine Learning Made Easy
     """
